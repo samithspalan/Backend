@@ -1,20 +1,18 @@
 import mongoose from "mongoose";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/synergia';
-
 export const connectDB = async () => {
     try {
-        await mongoose.connect(MONGO_URI, {
-            // use new url parser / unified topology are defaults in mongoose v6+
-        });
-        console.log("MongoDB connected");
+        if (!process.env.MONGO_URL) {
+            throw new Error('MONGO_URL environment variable is not set');
+        }
+        await mongoose.connect(process.env.MONGO_URL, {});
+        console.log("mongoose connected successfully");
     } catch (error) {
-        console.error("MongoDB connection error:", error);
+        console.error("mongoose connection failed:", error.message || error);
+       
         process.exit(1);
     }
 };
-
-export default connectDB;

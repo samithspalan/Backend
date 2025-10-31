@@ -1,17 +1,22 @@
 import express from 'express';
-import connectDB from './config/db.js';
+import dotenv from 'dotenv';
+import {connectDB} from './config/db.js';
 import Booking from './models/Booking.js';
+
+dotenv.config();
 
 const router = express();
 const port = process.env.PORT || 3000;
-app.use(express.json());
+router.use(express.json());
+
+let serverStarted = false;
 
 connectDB();
 
 router.get('/', (req, res) => {
   res.send('Welcome to the Synergia Event Booking API');
 });
-
+ 
 router.get('/bookings', async (req, res) => {
   try {
     const bookings = await Booking.find().sort({ createdAt: -1 });
@@ -24,7 +29,20 @@ router.get('/bookings', async (req, res) => {
 
 router.post('/bookings', async (req, res) => {
   try {
-    const { name, email, event, ticketType } = req.body;
+    const { name, email, event } = req.body;
+
+  (async () => {
+    try {
+      await connectDB();
+      router.listen(port, () => {
+        serverStarted = true;
+        console.log(`Express server running at http://localhost:${port}`);
+      });
+    } catch (err) {
+      console.error('Failed to start server due to DB connection error:', err && err.message ? err.message : err);
+      process.exit(1);
+    }
+  })();
     if (!name || !email || !event) {
       return res.status(400).json({ message: 'name, email and event are required' });
     }
