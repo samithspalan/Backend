@@ -1,25 +1,124 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import connectDB from './config/db.js';
-const app = express();
-const port = 3000;
+import Booking from './models/Booking.js';
+
+const router = express();
+const port = process.env.PORT || 3000;
 app.use(express.json());
 
 connectDB();
-app.get('/',(req,res)=>{
-    res.send('Welcome to the Student Management API');
+
+router.get('/', (req, res) => {
+  res.send('Welcome to the Synergia Event Booking API');
 });
 
-
-
-
-
-
-
-app.listen(port,()=>{
-    console.log(`Express server running at http://localhost:${port}`);
-    connectDB();
+router.get('/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find().sort({ createdAt: -1 });
+    res.status(200).json(bookings);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
+
+router.post('/bookings', async (req, res) => {
+  try {
+    const { name, email, event, ticketType } = req.body;
+    if (!name || !email || !event) {
+      return res.status(400).json({ message: 'name, email and event are required' });
+    }
+    const newBooking = await Booking.create({ name, email, event, ticketType });
+    res.status(201).json(newBooking);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/bookings/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    res.status(200).json(booking);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: 'Invalid booking id' });
+  }
+});
+
+router.put('/bookings/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = (({ name, email, event, ticketType }) => ({ name, email, event, ticketType }))(req.body);
+    
+    Object.keys(updates).forEach(k => updates[k] === undefined && delete updates[k]);
+    const updated = await Booking.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+    if (!updated) return res.status(404).json({ message: 'Booking not found' });
+    res.status(200).json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: 'Invalid request' });
+  }
+});
+
+router.delete('/bookings/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const removed = await Booking.findByIdAndDelete(id);
+    if (!removed) return res.status(404).json({ message: 'Booking not found' });
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: 'Invalid booking id' });
+  }
+});
+
+router.get('/bookings/search', async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ message: 'email query parameter required' });
+    const bookings = await Booking.find({ email: { $regex: email, $options: 'i' } });
+    res.status(200).json(bookings);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/bookings/filter', async (req, res) => {
+  try {
+    const { event } = req.query;
+    if (!event) return res.status(400).json({ message: 'event query parameter required' });
+    const bookings = await Booking.find({ event: { $regex: event, $options: 'i' } });
+    res.status(200).json(bookings);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.listen(port, () => {
+  console.log(`Express server running at http://localhost:${port}`);
+});
+// import express from 'express';
+// import mongoose from 'mongoose';
+// import connectDB from './config/db.js';
+// const app = express();
+// const port = 3000;
+// app.use(express.json());
+
+// connectDB();
+// app.get('/',(req,res)=>{
+//     res.send('Welcome to the Student Management API');
+// });
+
+
+// app.listen(port,()=>{
+//     console.log(`Express server running at http://localhost:${port}`);
+//     connectDB();
+// });
 
 // let students=[
 //     {
