@@ -46,7 +46,7 @@ router.post('/bookings', async (req, res) => {
     if (!name || !email || !event) {
       return res.status(400).json({ message: 'name, email and event are required' });
     }
-    const newBooking = await Booking.create({ name, email, event, ticketType });
+    const newBooking = await Booking.create({ name, email, event});
     res.status(201).json(newBooking);
   } catch (err) {
     console.error(err);
@@ -69,7 +69,7 @@ router.get('/bookings/:id', async (req, res) => {
 router.put('/bookings/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = (({ name, email, event, ticketType }) => ({ name, email, event, ticketType }))(req.body);
+    const updates = (({ name, email, event }) => ({ name, email, event }))(req.body);
     
     Object.keys(updates).forEach(k => updates[k] === undefined && delete updates[k]);
     const updated = await Booking.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
